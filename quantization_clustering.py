@@ -36,5 +36,19 @@ def strange_op(data_point):
     data_point[~mask] = data_point[~mask] - data_mins[~mask]
     return np.ceil(data_point).astype(int)
 
-strange_result = np.apply_along_axis(strange_op, axis=1, arr=X)
+def quantize(data_point, bins_per_dim):
+    mask = (data_point == data_mins)
+    data_point[mask] = 1
+    data_point[~mask] = data_point[~mask] - data_mins[~mask]
+    data_point = np.ceil(data_point).astype(int)
+    p_array = np.full_like(data_point, bins_per_dim)
+    # Es pot simplificar
+    dim_exp = data_point.shape[-1] - np.arange(1, data_point.shape[-1]+1)
+    p_array = np.power(p_array, dim_exp)
+    b_id = np.multiply(data_point-1, p_array) + data_point
+    # shape is number of dimensions
+
+    return b_id
+
+strange_result = np.apply_along_axis(quantize, axis=1, arr=X, bins_per_dim=bins_per_dim)
 print(strange_result)
