@@ -46,6 +46,11 @@ class QBCA:
             self.bins[idx] += 1
             self.bins_points[idx].append(p)
 
+    def __get_nonzero_bins(self):
+        nozero_idx = np.where(self.bins != 0)
+        nozero_bins = self.bins[nozero_idx]
+        return nozero_bins, nozero_idx[0]
+
     def __get_neigh_idx(self, idx):
         unr = np.unravel_index(idx, self.bins_shape)
         # Use offsets to get neighbors
@@ -56,11 +61,8 @@ class QBCA:
         n_bins = []
         for i in n_idx:
             # b = np.ravel_multi_index(i, (self.bins_shape))
-            print(i)
             n_bins.append(np.ravel_multi_index(i, self.bins_shape))
         return np.array(n_bins)
-
-        print(1)
 
     def __bin_cardinality(self, bin_tuple):
         return bin_tuple[0]
@@ -69,9 +71,7 @@ class QBCA:
         self.seeds = np.zeros((n_seeds, self.n_dims))
         s_bins = []
         # Process all non zero bins
-        nozero_idx = np.where(self.bins != 0)
-        nozero_bins = self.bins[nozero_idx]
-
+        nozero_bins, nozero_idx = self.__get_nonzero_bins()
         # To make heap work as max heap changed value symbol
         h = [(-x[0], x[1]) for x in np.vstack((nozero_bins, nozero_idx)).T]
         heapq.heapify(h)
@@ -79,7 +79,6 @@ class QBCA:
 
         while len(h) > 0:
             a = heapq.heappop(h)
-            print(a)
             n_idxs = self.__get_neigh_idx(a[1])
             flag = True
             for n_idx in n_idxs:
@@ -133,8 +132,32 @@ class QBCA:
         return sqrt(np.sum(np.power(seed-lb, 2)))
 
     def __center_assignment(self, n_seeds):
-        dmin = self.__min_distance(self.seeds[0], 2)
-        dmax = self.__max_distance(self.seeds[0], 2)
+        # bins_candidates = [[] for _ in range(self.bins_per_dim ** self.n_dims)]
+
+        nonzero_bins, nonzero_idxs = self.__get_nonzero_bins()
+        for i, b_idx in enumerate(nonzero_idxs):
+            candidates = []
+            lowest_max_dist = None
+            for s in self.seeds:
+                max_dist = self.__max_distance(s, b_idx)
+                if not lowest_max_dist or max_dist < lowest_max_dist:
+                    lowest_max_dist = max_dist
+
+            for s_idx, s in enumerate(self.seeds):
+                min_dist = self.__min_distance(s, b_idx)
+                if min_dist <= lowest_max_dist:
+                    candidates.append(s_idx)
+
+            for p in self.bins_points[b_idx]:
+                lowest_dist = None
+                for s_idx in candidates:
+                    dist = np.linalg.norm(self.seeds[s_idx]-p)
+                    if not lowest_dist or dist < lowest_max_dist:
+                        lowest_dist = dist
+                        s_candidate = s_idx
+                # Assign p to the seed candidate
+            print(b_idx, s_candidate)
+
 
     def fit(self, X, n_seeds=3):
         self.__quantization(X)

@@ -10,4 +10,3 @@ if __name__ == '__main__':
 
     q = QBCA()
     q.fit(X)
-    print(1)
