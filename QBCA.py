@@ -14,6 +14,8 @@ class QBCA:
         self.data_mins = []
         self.bins_shape = ()
         self.seeds = []
+        self.seeds_prev = []
+        self.seed_points = []
 
     def __init_bins(self, X):
         self.n_dims = X.shape[-1]
@@ -67,6 +69,10 @@ class QBCA:
     def __bin_cardinality(self, bin_tuple):
         return bin_tuple[0]
 
+    def __compute_center(self, points):
+        a = np.mean(np.vstack(points), axis=0)
+        return np.mean(np.vstack(points), axis=0)
+
     def __center_initialization(self, n_seeds):
         self.seeds = np.zeros((n_seeds, self.n_dims))
         s_bins = []
@@ -94,7 +100,7 @@ class QBCA:
         s_bins.sort(key=self.__bin_cardinality)
         for s_idx, (_, s_bin) in enumerate(s_bins[: n_seeds]):
             # Compute center with bin points
-            self.seeds[s_idx] = np.mean(np.vstack(self.bins_points[s_bin]), axis=0)
+            self.seeds[s_idx] = self.__compute_center(self.bins_points[s_bin])
 
     def __max_coords_dim(self,dim, idx):
         return self.bin_sizes[dim] * (idx +1)
@@ -132,7 +138,8 @@ class QBCA:
         return sqrt(np.sum(np.power(seed-lb, 2)))
 
     def __center_assignment(self, n_seeds):
-        # bins_candidates = [[] for _ in range(self.bins_per_dim ** self.n_dims)]
+        self.seed_points = [[] for _ in range(len(self.seeds))]
+        self.seeds_prev = np.copy(self.seeds)
 
         nonzero_bins, nonzero_idxs = self.__get_nonzero_bins()
         for i, b_idx in enumerate(nonzero_idxs):
@@ -154,16 +161,44 @@ class QBCA:
                     dist = np.linalg.norm(self.seeds[s_idx]-p)
                     if not lowest_dist or dist < lowest_max_dist:
                         lowest_dist = dist
-                        s_candidate = s_idx
-                # Assign p to the seed candidate
-            print(b_idx, s_candidate)
+                        candidate_idx = s_idx
+                self.seed_points[candidate_idx].append(p)
+        # Recompute centers
+        for s_idx, _ in enumerate(self.seeds):
+            self.seeds[s_idx] = self.__compute_center(self.seed_points[s_idx])
 
+    def __end_operation(self):
+        # for each seed
+        o1 = []
+        for s_prev, s in zip(self.seeds_prev, self.seeds):
+            o2 = np.zeros(self.n_dims)
+            o1.append(np.sum(s-s_prev) ** 2)
+        d = len(self.seeds)
+        return np.sum(o1) / len(self.seeds)
 
-    def fit(self, X, n_seeds=3):
+    def __output_points_preds(self, X):
+        X_out = np.zeros(X.shape)
+        y = np.zeros(X.shape[0])
+        acc_len = 0
+        for seed, s_points in enumerate(self.seed_points):
+            X_out[:len(s_points), :] = s_points
+            y[:len(s_points)] = seed
+            acc_len += len(s_points)
+        return X_out, y
+
+        pass
+    def fit(self, X, n_seeds=3, thr=0.1):
+        end_value = thr+1
         self.__quantization(X)
         self.__center_initialization(n_seeds)
-        self.__center_assignment(n_seeds)
-        # CCA (assign)
+        while end_value > thr:
+            self.__center_assignment(n_seeds)
+            end_value = self.__end_operation()
+        # The order of x is not maintained
+        X_out, y = self.__output_points_preds(X)
+        pass
+
+# MIRWAR BUG CENTRESS MORTS I TAL
 
 
 if __name__ == '__main__':
