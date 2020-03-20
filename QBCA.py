@@ -1,5 +1,5 @@
 import numpy as np
-from math import log, floor
+from math import log, floor, sqrt
 import heapq
 from itertools import combinations, permutations, product
 
@@ -47,7 +47,7 @@ class QBCA:
             self.bins_points[idx].append(p)
 
     def __get_neigh_idx(self, idx):
-        unr = np.unravel_index(idx, (self.bins_shape))
+        unr = np.unravel_index(idx, self.bins_shape)
         # Use offsets to get neighbors
         n_idx = self.neigh_idx + unr
         # Remove invalid
@@ -57,7 +57,7 @@ class QBCA:
         for i in n_idx:
             # b = np.ravel_multi_index(i, (self.bins_shape))
             print(i)
-            n_bins.append(np.ravel_multi_index(i, (self.bins_shape)))
+            n_bins.append(np.ravel_multi_index(i, self.bins_shape))
         return np.array(n_bins)
 
         print(1)
@@ -87,37 +87,68 @@ class QBCA:
                     flag = False
             if flag:
                 s_bins.append(a)
-
         # If need more seeds
         if len(s_bins) < n_seeds:
             # Select k − | L | histogram bins with the largest cardinalities not in L
             s_bins.extend([x for x in h_copy if x not in s_bins][:(n_seeds - len(s_bins))])
-            pass
         # For the histogram bins with the largest cardinalities in L
         s_bins.sort(key=self.__bin_cardinality)
         for s_idx, (_, s_bin) in enumerate(s_bins[: n_seeds]):
-            # Cluster all the points in each histogram bin as one cluster
-            # The center is the seed
+            # Compute center with bin points
             self.seeds[s_idx] = np.mean(np.vstack(self.bins_points[s_bin]), axis=0)
+
+    def __max_coords_dim(self,dim, idx):
+        return self.bin_sizes[dim] * (idx +1)
+
+    def __min_coords_dim(self,dim, idx):
+        return self.bin_sizes[dim] * idx
+
+    def __value_bin_dim(self,seed, idx, dim):
+        if seed[dim] < self.__min_coords_dim(dim, idx[dim]):
+            return self.__min_coords_dim(dim, idx[dim])
+        elif seed[dim] > self.__max_coords_dim(dim, idx[dim]):
+            return self.__max_coords_dim(dim, idx[dim])
+        else:
+            return seed[dim]
+
+    def __min_distance(self, seed, bin_idx):
+        # seed = np_array of n dims
+        # bin_idx to look at bin stuff
+        # bin = self.bins[bin_idx]
+        b = np.zeros(self.n_dims)
+        bin_idx = np.unravel_index(bin_idx, self.bins_shape)
+        for d in range(self.n_dims):
+                b[d] = self.__value_bin_dim(seed, bin_idx, d)
+        return sqrt(np.sum(np.power(seed-b, 2)))
+
+    def __max_distance(self, seed, bin_idx):
+        lb = np.zeros(self.n_dims)
+        bin_idx = np.unravel_index(bin_idx, self.bins_shape)
+        for d in range(self.n_dims):
+            t = (self.__min_coords_dim(d, bin_idx[d]) + self.__max_coords_dim(d, bin_idx[d])) / 2
+            if seed[d] >= t:
+                lb[d] = t
+            else:
+                lb[d] = self.__max_coords_dim(d, bin_idx[d])
+        return sqrt(np.sum(np.power(seed-lb, 2)))
+
+    def __center_assignment(self, n_seeds):
+        dmin = self.__min_distance(self.seeds[0], 2)
+        dmax = self.__max_distance(self.seeds[0], 2)
 
     def fit(self, X, n_seeds=3):
         self.__quantization(X)
         self.__center_initialization(n_seeds)
-        # CCI (init)
+        self.__center_assignment(n_seeds)
         # CCA (assign)
 
 
 if __name__ == '__main__':
     from sklearn import datasets
-
     iris = datasets.load_iris()
     X = iris.data
     y = iris.target
     q = QBCA()
     q.fit(X)
 
-# bin_idxs = np.unravel_index(sample_bins, self.bins.shape)
-# bin_idxs = list(zip(*bin_idxs))
-# for idx, p in zip(bin_idxs, X):
-#     self.bins[idx] += 1
-#     self.bins_points
+
