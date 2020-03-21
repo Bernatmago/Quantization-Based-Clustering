@@ -137,6 +137,8 @@ class QBCA:
             lowest_dist = None
             for s_idx in candidates:
                 dist = np.linalg.norm(self.seeds[s_idx] - p)
+                if dist == lowest_dist:
+                    print("WTF")
                 if not lowest_dist or dist < lowest_dist:
                     lowest_dist = dist
                     candidate_idx = s_idx
@@ -158,7 +160,7 @@ class QBCA:
         y = np.zeros(X.shape[0])
         acc_len = 0
         for seed, s_points in enumerate(self.seed_points):
-            x_out[:len(s_points), :] = s_points
+            x_out[acc_len:(acc_len+len(s_points)), :] = s_points
             y[:len(s_points)] = seed
             acc_len += len(s_points)
         return x_out, y
@@ -190,13 +192,14 @@ class QBCA:
         for s_idx, _ in enumerate(self.seeds):
             self.seeds[s_idx] = self.__compute_center(self.seed_points[s_idx])
 
-    def fit(self, x, n_seeds=2, thr=0.01):
+    def fit(self, x, n_seeds=2, thr=0.1):
         end_value = thr + 1
         self.__quantization(x)
         self.__center_initialization(n_seeds)
         while end_value > thr:
             self.__center_assignment()
             end_value = self.__end_operation()
+            print(end_value)
         # The order of x is not maintained
         return self.__output_points_preds(x)
 
