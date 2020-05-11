@@ -5,7 +5,7 @@ from itertools import combinations, permutations, product
 
 
 class QBCA:
-    def __init__(self):
+    def __init__(self, verbose=False):
         self.n_dims = 0
         self.bins_per_dim = 0
         self.bin_sizes = []
@@ -16,6 +16,7 @@ class QBCA:
         self.seeds = []
         self.seeds_prev = []
         self.seed_points = []
+        self.verbose = verbose
 
     def __init_bins(self, X):
         self.n_dims = X.shape[-1]
@@ -37,7 +38,7 @@ class QBCA:
         p_array = np.full_like(data_point, self.bins_per_dim)
         dim_exp = np.arange(data_point.shape[-1] - 1, -1, -1)
         p_array = np.power(p_array, dim_exp)
-        bin_idx = np.sum(np.multiply(data_point - 1, p_array))  # data_point[-1]
+        bin_idx = np.sum(np.multiply(data_point - 1, p_array))
         return bin_idx
 
     def __get_nonzero_bins(self):
@@ -93,7 +94,7 @@ class QBCA:
         for d in range(self.n_dims):
             t = (self.__min_coords_dim(d, bin_idx[d]) + self.__max_coords_dim(d, bin_idx[d])) / 2
             if seed[d] >= t:
-                lb[d] = t
+                lb[d] = self.__min_coords_dim(d, bin_idx[d])
             else:
                 lb[d] = self.__max_coords_dim(d, bin_idx[d])
         return sqrt(np.sum(np.power(seed - lb, 2)))
@@ -135,10 +136,9 @@ class QBCA:
     def __assign_bin_points(self, b_idx, candidates):
         for p in self.bins_points[b_idx]:
             lowest_dist = None
+            candidate_idx = None
             for s_idx in candidates:
                 dist = np.linalg.norm(self.seeds[s_idx] - p)
-                if dist == lowest_dist:
-                    print("WTF")
                 if not lowest_dist or dist < lowest_dist:
                     lowest_dist = dist
                     candidate_idx = s_idx
@@ -161,7 +161,7 @@ class QBCA:
         acc_len = 0
         for seed, s_points in enumerate(self.seed_points):
             x_out[acc_len:(acc_len+len(s_points)), :] = s_points
-            y[:len(s_points)] = seed
+            y[acc_len:(acc_len+len(s_points))] = seed
             acc_len += len(s_points)
         return x_out, y
 
@@ -192,14 +192,14 @@ class QBCA:
         for s_idx, _ in enumerate(self.seeds):
             self.seeds[s_idx] = self.__compute_center(self.seed_points[s_idx])
 
-    def fit(self, x, n_seeds=2, thr=0.1):
+    def fit(self, x, n_seeds=2, thr=0.0001):
         end_value = thr + 1
         self.__quantization(x)
         self.__center_initialization(n_seeds)
         while end_value > thr:
             self.__center_assignment()
             end_value = self.__end_operation()
-            print(end_value)
+            if self.verbose: print(end_value)
         # The order of x is not maintained
         return self.__output_points_preds(x)
 
