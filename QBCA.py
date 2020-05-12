@@ -5,7 +5,7 @@ from itertools import combinations, permutations, product
 
 
 class QBCA:
-    def __init__(self, n_seeds=3, thr=0.001, verbose=False):
+    def __init__(self, n_seeds=3, thr=0.001, max_iter=50, verbose=False):
         self.n_dims = 0
         self.bins_per_dim = 0
         self.bin_sizes = []
@@ -20,6 +20,7 @@ class QBCA:
         self.n_iter_ = 0
         self.n_seeds = n_seeds
         self.thr = thr
+        self.max_iter = max_iter
         self.verbose = verbose
 
     def __init_bins(self, X):
@@ -165,7 +166,7 @@ class QBCA:
 
     def __output_points_preds(self, X):
         x_out = np.zeros(X.shape)
-        y = np.zeros(X.shape[0])
+        y = np.zeros(X.shape[0], dtype=int)
         acc_len = 0
         for seed, s_points in enumerate(self.seed_points):
             x_out[acc_len:(acc_len + len(s_points)), :] = s_points
@@ -205,7 +206,7 @@ class QBCA:
         end_value = self.thr + 1
         self.__quantization(x)
         self.__center_initialization(self.n_seeds)
-        while end_value > self.thr:
+        while end_value > self.thr and self.n_iter_ < self.max_iter:
             self.__center_assignment()
             end_value = self.__end_operation()
             if self.verbose: print(end_value)
