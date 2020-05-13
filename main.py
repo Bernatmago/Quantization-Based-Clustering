@@ -1,9 +1,5 @@
-from sklearn.decomposition import PCA
-from sklearn import datasets
-import pandas as pd
+
 from QBCA import QBCA
-import matplotlib.pyplot as plt
-import numpy as np
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
 import time
@@ -11,14 +7,14 @@ from utils import *
 from evaluate import dunn_index
 
 if __name__ == '__main__':
-    n_clusters = [2, 3, 5]
+    n_clusters = [2, 3, 4, 5]
     algorithms = ['K-Means', 'QBCA']
     thr = 0.0001
     max_iter = 50
     n_reps = 10
     n_dims = 5
-    images = ['shiba', 'cybertruck']
-    datasets = ['satimage']
+    images = ['totoro', 'cybertruck']
+    datasets = ['test', 'satimage']
     datasets = datasets + images
     for dataset in datasets:
         print('{} Running experiments for {} {}'.format('-'*10, dataset, '-'*10))
@@ -41,7 +37,7 @@ if __name__ == '__main__':
                 iter_reps = np.zeros(n_reps)
                 for r in range(n_reps):
                     if dataset in images:
-                        X, _ = image_as_dataset(dataset, im_height=150)
+                        X, _ = image_as_dataset(dataset, im_height=100)
                     else:
                         X, _ = load_data(dataset, n_dims=n_dims, has_labels=True)
                     t = time.time()
@@ -62,6 +58,8 @@ if __name__ == '__main__':
                     # dunn_reps[r] = dunn_index(cluster_list(X, y))
                     time_reps[r] = time.time() - t
                     iter_reps[r] = clf.n_iter_
+
+                    del clf
 
                 algorithm_shilouette.append(np.mean(shil_reps))
                 algorithm_distances.append(np.mean(dist_reps))

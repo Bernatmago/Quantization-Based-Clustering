@@ -16,7 +16,7 @@ def load_data(dataset, n_dims=-1, has_labels=True):
     else:
         x = df.to_numpy()
         y = None
-    if n_dims > 0:
+    if 0 < n_dims < x.shape[1]:
         pca = PCA(n_components=n_dims)
         x = pca.fit_transform(x)
     return x, y
