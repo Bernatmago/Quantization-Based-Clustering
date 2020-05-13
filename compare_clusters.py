@@ -10,10 +10,10 @@ import time
 from utils import *
 from evaluate import dunn_index
 if __name__ == '__main__':
-    n_clusters = 4
+    n_clusters = 3
     thr = 0.0001
     max_iter = 50
-    dataset = 'test'
+    dataset = 'satimage'
 
     X, _ = load_data(dataset, n_dims=5, has_labels=True)
     q = QBCA(n_seeds=n_clusters, thr=thr, max_iter=max_iter)

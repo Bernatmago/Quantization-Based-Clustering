@@ -53,8 +53,8 @@ def plot_comparison(x1, y1, x2, y2, alg1, alg2, dataset):
     axs[0].scatter(x1[:, 0], x1[:, 1], c=y1)
     axs[1].set_title(alg2)
     axs[1].scatter(x2[:, 0], x2[:, 1], c=y2)
-    plt.show()
     plt.savefig(join(plot_dir, '{}_comp.png'.format(dataset)))
+
 
 
 def plot_segmented(x1, y1, x2, y2, c1, c2, shape, algs, dataset):
@@ -84,7 +84,6 @@ def plot_segmented(x1, y1, x2, y2, c1, c2, shape, algs, dataset):
         axs[n].set_title(algs[n])
     plt.tight_layout()
     plt.savefig(join(plot_dir, '{}_seg.png'.format(dataset)))
-    plt.show()
     pass
 
 
