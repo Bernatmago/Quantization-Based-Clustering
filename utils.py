@@ -61,13 +61,23 @@ def plot_segmented(x1, y1, x2, y2, c1, c2, shape, algs, dataset):
     plot_dir = 'output'
     fig, axs = plt.subplots(1, 2)
 
+    colours = np.array([
+        [0, 0, 255], #blue
+        [204, 0, 0], #red
+        [0, 153, 51], #green
+        [53, 0, 153] #purple
+    ])
     for n, (d, l, c) in enumerate(zip([x1, x2], [y1, y2], [c1, c2])):
         im = np.zeros(shape, dtype=int)
-        for s, i in zip(d, l):
-            im[int(s[-2]), int(s[-1]), :] = c[i, :3]
+        seg = np.zeros(shape, dtype=int)
 
-        axs[n].imshow(im)
+        for s, i in zip(d, l):
+            im[int(s[-2]), int(s[-1]), :] = s[:3]
+
+            seg[int(s[-2]), int(s[-1]), :] = colours[i, :]
         axs[n].grid(False)
+        axs[n].imshow(im)
+        axs[n].imshow(seg, alpha=0.35)
         axs[n].set_xticks([])
         axs[n].set_yticks([])
 
