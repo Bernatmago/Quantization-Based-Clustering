@@ -6,7 +6,7 @@ if __name__ == '__main__':
     n_clusters = 3
     thr = 0.01
     max_iter = 50
-    dataset = 'cybertruck'
+    dataset = 'totoro'
     algorithms = ['K-Means', 'QBCA']
     X, im = image_as_dataset(dataset, im_height=150)
 
