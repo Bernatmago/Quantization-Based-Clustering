@@ -1,14 +1,8 @@
-from sklearn.decomposition import PCA
-from sklearn import datasets
-import pandas as pd
 from QBCA import QBCA
-import matplotlib.pyplot as plt
-import numpy as np
 from sklearn.cluster import KMeans
-from sklearn.metrics import silhouette_score
 import time
 from utils import *
-from evaluate import dunn_index
+
 if __name__ == '__main__':
     n_clusters = 4
     thr = 0.0001

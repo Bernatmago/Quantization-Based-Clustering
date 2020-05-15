@@ -2,6 +2,7 @@ from QBCA import QBCA
 from sklearn.cluster import KMeans
 import time
 from utils import *
+
 if __name__ == '__main__':
     n_clusters = 3
     thr = 0.01

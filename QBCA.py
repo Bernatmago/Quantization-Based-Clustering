@@ -1,7 +1,7 @@
 import numpy as np
 from math import log, floor, sqrt
 import heapq
-from itertools import combinations, permutations, product
+from itertools import product
 
 
 class QBCA:
@@ -28,7 +28,6 @@ class QBCA:
         self.bins_per_dim = int(floor(log(X.shape[0], self.n_dims)))
         self.bin_sizes = (np.amax(X, axis=0) - np.amin(X, axis=0)) / self.bins_per_dim
         self.data_mins = np.amin(X, axis=0)
-        # self.bins = np.zeros(self.n_dims ** self.bins_per_dim, dtype=np.uint32)
         self.bins = np.zeros(self.bins_per_dim ** self.n_dims, dtype=np.uint32)
         self.bins_points = [[] for _ in range(self.bins_per_dim ** self.n_dims)]
         self.bins_shape = tuple([self.bins_per_dim] * self.n_dims)
@@ -211,7 +210,6 @@ class QBCA:
             end_value = self.__end_operation()
             if self.verbose: print(end_value)
             self.n_iter_ += 1
-        # The order of x is not maintained
         return self
 
     def fit_predict(self, x):
