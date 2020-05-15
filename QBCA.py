@@ -219,8 +219,10 @@ class QBCA:
     def predict(self, x):
         return self.__output_points_preds(x)
 
+
 if __name__ == '__main__':
     from sklearn import datasets
+
     iris = datasets.load_iris()
     X = iris.data
     y = iris.target
