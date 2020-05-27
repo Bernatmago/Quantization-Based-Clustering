@@ -3,10 +3,12 @@ from math import sqrt
 
 
 def distance(x, y):
+    """Euclidean distance between two samples"""
     return sqrt(np.sum(np.power(x - y, 2)))
 
 
 def clusters_dissimilarity(c1, c2):
+    """Calculate dissimilarity metric between two clusters"""
     min_dist = None
     for i in range(c1.shape[0]):
         for j in range(c2.shape[0]):
@@ -17,6 +19,7 @@ def clusters_dissimilarity(c1, c2):
 
 
 def cluster_diameter(cluster):
+    """Compute the diameter of a cluster"""
     max_dist = -1
     for i in range(cluster.shape[0]):
         for j in range(cluster.shape[0]):
@@ -28,6 +31,7 @@ def cluster_diameter(cluster):
 
 
 def dunn_index(clusters):
+    """Compue dunn index from cluster datapoints"""
     max_diameter = -1
     min_ratio = None
     for c in clusters:

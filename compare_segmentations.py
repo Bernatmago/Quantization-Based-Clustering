@@ -1,4 +1,4 @@
-from QBCA import QBCA
+from qbca import QBCA
 from sklearn.cluster import KMeans
 import time
 from utils import *

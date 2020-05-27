@@ -6,6 +6,7 @@ from itertools import product
 
 class QBCA:
     def __init__(self, n_seeds=3, thr=0.001, max_iter=50, verbose=False):
+        """"Initialize the algortihm"""
         self.n_dims = 0
         self.bins_per_dim = 0
         self.bin_sizes = []
@@ -24,6 +25,7 @@ class QBCA:
         self.verbose = verbose
 
     def __init_bins(self, X):
+        """"Initialize all the quantization related variables"""
         self.n_dims = X.shape[-1]
         self.bins_per_dim = int(floor(log(X.shape[0], self.n_dims)))
         self.bin_sizes = (np.amax(X, axis=0) - np.amin(X, axis=0)) / self.bins_per_dim
@@ -37,6 +39,7 @@ class QBCA:
         self.dist_count = 0
 
     def __quantize_sample(self, data_point):
+        """Given a data point return its correspondent bin index"""
         mask = (data_point == self.data_mins)
         data_point[mask] = 1
         data_point[~mask] = data_point[~mask] - self.data_mins[~mask]
@@ -48,11 +51,13 @@ class QBCA:
         return bin_idx
 
     def __get_nonzero_bins(self):
+        """Get all the non empty bins and their indexes"""
         nozero_idx = np.where(self.bins != 0)
         nozero_bins = self.bins[nozero_idx]
         return nozero_bins, nozero_idx[0]
 
     def __get_neigh_idx(self, idx):
+        """Get all the neighboring bins indexes given an index"""
         unr = np.unravel_index(idx, self.bins_shape)
         n_idx = self.neigh_idx + unr
         n_idx = n_idx[~(n_idx < 0).any(1)]
@@ -63,23 +68,29 @@ class QBCA:
         return np.array(n_bins)
 
     def __bin_cardinality(self, bin_tuple):
+        """Get bin cardinality from a tuple"""
         return bin_tuple[0]
 
     def __compute_center(self, points):
+        """Compute the center from a set of points"""
         return np.mean(np.vstack(points), axis=0)
 
     def __heaapify__bins(self, b, b_idx):
+        """Get bins as a heap based on their value"""
         h = [(-x[0], x[1]) for x in np.vstack((b, b_idx)).T]
         heapq.heapify(h)
         return h
 
     def __max_coords_dim(self, dim, idx):
+        """Get the maximum coordinate value from a bin in a given dimension"""
         return self.bin_sizes[dim] * (idx + 1)
 
     def __min_coords_dim(self, dim, idx):
+        """Get the minimum coordinate value from a bin in a given dimension"""
         return self.bin_sizes[dim] * idx
 
     def __value_bin_dim(self, seed, idx, dim):
+        """Get the value from a bin in a given dimension"""
         if seed[dim] < self.__min_coords_dim(dim, idx[dim]):
             return self.__min_coords_dim(dim, idx[dim])
         elif seed[dim] > self.__max_coords_dim(dim, idx[dim]):
@@ -88,6 +99,7 @@ class QBCA:
             return seed[dim]
 
     def __min_distance(self, seed, bin_idx):
+        """Compute minimum distance between a seed and a bin"""
         b = np.zeros(self.n_dims)
         bin_idx = np.unravel_index(bin_idx, self.bins_shape)
         for d in range(self.n_dims):
@@ -96,6 +108,7 @@ class QBCA:
         return sqrt(np.sum(np.power(seed - b, 2)))
 
     def __max_distance(self, seed, bin_idx):
+        """Compute the maximum distance between a seed and a bin"""
         lb = np.zeros(self.n_dims)
         bin_idx = np.unravel_index(bin_idx, self.bins_shape)
         for d in range(self.n_dims):
@@ -107,7 +120,8 @@ class QBCA:
         self.dist_count += 1
         return sqrt(np.sum(np.power(seed - lb, 2)))
 
-    def __seed_list(self, n_seeds, h):
+    def __initial_seeds(self, n_seeds, h):
+        """Compute the first seeds from a given bin heap"""
         h_copy = h[:]
         s_bins = []
         while len(h) > 0:
@@ -126,6 +140,7 @@ class QBCA:
         return s_bins
 
     def __lowest_max_dist(self, b_idx):
+        """Compute lowest max dist of a given bin"""
         lowest_max_dist = None
         for s in self.seeds:
             max_dist = self.__max_distance(s, b_idx)
@@ -134,6 +149,7 @@ class QBCA:
         return lowest_max_dist
 
     def __bin_candidates(self, b_idx, lowest_max_dist):
+        """Get the seed candidates for a bin given the lowest max distance"""
         candidates = []
         for s_idx, s in enumerate(self.seeds):
             min_dist = self.__min_distance(s, b_idx)
@@ -142,6 +158,7 @@ class QBCA:
         return candidates
 
     def __assign_bin_points(self, b_idx, candidates):
+        """Assign points fom a bin to their respective seeds"""
         for p in self.bins_points[b_idx]:
             lowest_dist = None
             candidate_idx = None
@@ -152,18 +169,21 @@ class QBCA:
                     candidate_idx = s_idx
             self.seed_points[candidate_idx].append(p)
 
-    def __assign_bin_seed(self, b_idx):
+    def __assign_bin_seeds(self, b_idx):
+        """Assign a bin to its correspondent seeds"""
         lowest_max_dist = self.__lowest_max_dist(b_idx)
         candidates = self.__bin_candidates(b_idx, lowest_max_dist)
         self.__assign_bin_points(b_idx, candidates)
 
     def __end_operation(self):
+        """Compute the ending criteria based on center changes"""
         seed_self_dist = []
         for s_prev, s in zip(self.seeds_prev, self.seeds):
             seed_self_dist.append(np.sum(s - s_prev) ** 2)
         return np.sum(seed_self_dist) / len(self.seeds)
 
     def __output_points_preds(self, X):
+        """Output datapoints with their predictions"""
         x_out = np.zeros(X.shape)
         y = np.zeros(X.shape[0], dtype=int)
         acc_len = 0
@@ -174,6 +194,7 @@ class QBCA:
         return x_out, y
 
     def __quantization(self, X):
+        """Quantize the input data"""
         self.__init_bins(X)
         bin_idxs = np.apply_along_axis(self.__quantize_sample, axis=1, arr=X)
         for idx, p in zip(bin_idxs, X):
@@ -181,26 +202,29 @@ class QBCA:
             self.bins_points[idx].append(p)
 
     def __center_initialization(self, n_seeds):
+        """Initialize centers from the initial quantization given a number of seeds"""
         self.seeds = np.zeros((n_seeds, self.n_dims))
         nozero_bins, nozero_idx = self.__get_nonzero_bins()
         h = self.__heaapify__bins(nozero_bins, nozero_idx)
-        l = self.__seed_list(n_seeds, h)
+        l = self.__initial_seeds(n_seeds, h)
         for s_idx, (_, s_bin) in enumerate(l[: n_seeds]):
             # Compute center with bin points
             self.seeds[s_idx] = self.__compute_center(self.bins_points[s_bin])
 
     def __center_assignment(self):
+        """Assign points to their respective seeds"""
         self.seed_points = [[] for _ in range(len(self.seeds))]
         self.seeds_prev = np.copy(self.seeds)
         _, nonzero_idxs = self.__get_nonzero_bins()
 
         for b_idx in nonzero_idxs:
-            self.__assign_bin_seed(b_idx)
+            self.__assign_bin_seeds(b_idx)
         # Recompute centers
         for s_idx, _ in enumerate(self.seeds):
             self.seeds[s_idx] = self.__compute_center(self.seed_points[s_idx])
 
     def fit(self, x):
+        """Start clustering process untill ending criteria is met"""
         self.n_iter_ = 0
         end_value = self.thr + 1
         self.__quantization(x)
@@ -213,10 +237,12 @@ class QBCA:
         return self
 
     def fit_predict(self, x):
+        """Cluster data and output the final predictions"""
         self.fit(x)
         return self.__output_points_preds(x)
 
     def predict(self, x):
+        """Output data predictions"""
         return self.__output_points_preds(x)
 
 

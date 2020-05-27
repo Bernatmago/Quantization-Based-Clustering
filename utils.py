@@ -4,10 +4,12 @@ from sklearn.decomposition import PCA
 from os.path import join
 import pandas as pd
 import cv2
+
 plt.style.use('ggplot')
 
 
 def load_data(dataset, n_dims=-1, has_labels=True):
+    """Load csv file using pandas, apply pca if dims do not match"""
     data_dir = 'data'
     df = pd.read_csv(join(data_dir, dataset + '.csv'))
     if has_labels:
@@ -23,6 +25,7 @@ def load_data(dataset, n_dims=-1, has_labels=True):
 
 
 def image_as_dataset(filename, im_height=150):
+    """Load image in the desired dataset format, resize the image to the desired size"""
     data_dir = 'data'
     im = cv2.imread(join(data_dir, filename + '.jpg'))
     if im_height:
@@ -31,18 +34,20 @@ def image_as_dataset(filename, im_height=150):
         dim = (int(x * ratio), im_height)
         im = cv2.resize(im, dim, interpolation=cv2.INTER_CUBIC)
     y, x, z = im.shape
-    x_idx, y_idx = np.unravel_index(np.arange(x*y), im.shape[:2])
-    im2d = im.reshape(x*y, z)
+    x_idx, y_idx = np.unravel_index(np.arange(x * y), im.shape[:2])
+    im2d = im.reshape(x * y, z)
     im2d = np.hstack((im2d, x_idx.reshape(-1, 1), y_idx.reshape(-1, 1)))
     return im2d, im
 
 
 def cluster_list(X, y):
+    """Transform algorithm prediction into a sublist for each cluster"""
     n = np.unique(y)
     return [X[y == i, :] for i in n]
 
 
 def plot_comparison(x1, y1, x2, y2, alg1, alg2, dataset):
+    """Plot clustering comparison between two configurations"""
     plot_dir = 'output'
     if x1.shape[1] > 2:
         p = PCA(n_components=2)
@@ -57,16 +62,16 @@ def plot_comparison(x1, y1, x2, y2, alg1, alg2, dataset):
     plt.savefig(join(plot_dir, '{}_comp.png'.format(dataset)))
 
 
-
 def plot_segmented(x1, y1, x2, y2, c1, c2, shape, algs, dataset):
+    """Plot segmentation comparison between two configurations"""
     plot_dir = 'output'
     fig, axs = plt.subplots(1, 2)
 
     colours = np.array([
-        [0, 0, 255], #blue
-        [204, 0, 0], #red
-        [0, 153, 51], #green
-        [53, 0, 153] #purple
+        [0, 0, 255],  # blue
+        [204, 0, 0],  # red
+        [0, 153, 51],  # green
+        [53, 0, 153]  # purple
     ])
     for n, (d, l, c) in enumerate(zip([x1, x2], [y1, y2], [c1, c2])):
         im = np.zeros(shape, dtype=int)
@@ -89,6 +94,7 @@ def plot_segmented(x1, y1, x2, y2, c1, c2, shape, algs, dataset):
 
 
 def plot_metrics(results, labels, categories, metric_name, params_name, dataset):
+    """Plot metrics for two algorithms with a list of configurations"""
     plot_dir = 'output'
     gap = 0.35
     x = np.arange(len(results[0]))
@@ -103,4 +109,3 @@ def plot_metrics(results, labels, categories, metric_name, params_name, dataset)
     ax.set_title('{}: {} by {}'.format(dataset, metric_name, params_name))
     plt.tight_layout()
     plt.savefig(join(plot_dir, '{}_{}_{}.png'.format(dataset, metric_name, params_name)))
-
