@@ -1,7 +1,11 @@
-from qbca import QBCA
-from sklearn.cluster import KMeans
 import time
-from utils import *
+
+import numpy as np
+
+from sklearn.cluster import KMeans
+
+from source.qbca import QBCA
+from source.utils import image_as_dataset, plot_segmented
 
 if __name__ == '__main__':
     n_clusters = 3

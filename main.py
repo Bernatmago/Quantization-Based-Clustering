@@ -1,9 +1,13 @@
-from qbca import QBCA
+import time
+
+import numpy as np
+
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
-import time
-from utils import *
-from evaluate import dunn_index
+
+from source.qbca import QBCA
+from source.utils import image_as_dataset, cluster_list, plot_metrics, load_data
+from source.evaluate import dunn_index
 
 """Main script used to run the entire experimentation pipeline except concrete comparisons"""
 if __name__ == '__main__':
@@ -23,11 +27,12 @@ if __name__ == '__main__':
         print('{} Running experiments for {} {}'.format('-'*10, dataset, '-'*10))
         experiments_shilouette = []
         experiments_distances = []
+        experiments_dunn = []
         if dataset in images:
             thr = 0.01
         else:
             thr = 0.0001
-        # experiments_dunn = []
+        
 
         # Do experiments for each algorithm
         for alg in algorithms:
@@ -39,7 +44,7 @@ if __name__ == '__main__':
             for nc in n_clusters:
                 shil_reps = np.zeros(n_reps)
                 dist_reps = np.zeros(n_reps)
-                # dunn_reps = np.zeros(n_reps)
+                dunn_reps = np.zeros(n_reps)
                 time_reps = np.zeros(n_reps)
                 iter_reps = np.zeros(n_reps)
 
@@ -64,7 +69,7 @@ if __name__ == '__main__':
                         n_dist = clf.dist_count
                     shil_reps[r] = silhouette_score(X, y)
                     dist_reps[r] = n_dist
-                    # dunn_reps[r] = dunn_index(cluster_list(X, y))
+                    dunn_reps[r] = dunn_index(cluster_list(X, y))
                     time_reps[r] = time.time() - t
                     iter_reps[r] = clf.n_iter_
 
@@ -83,9 +88,9 @@ if __name__ == '__main__':
 
             experiments_shilouette.append(algorithm_shilouette)
             experiments_distances.append(algorithm_distances)
-            # experiments_dunn.append(algorithm_dunn)
+            experiments_dunn.append(algorithm_dunn)
 
         # Generate plots
         plot_metrics(experiments_shilouette, n_clusters, algorithms, 'Silhouette', 'N-Clusters', dataset)
-        # plot_metrics(experiments_dunn, n_clusters, algorithms, 'Dunn', 'N-Clusters', dataset)
+        plot_metrics(experiments_dunn, n_clusters, algorithms, 'Dunn', 'N-Clusters', dataset)
         plot_metrics(experiments_distances, n_clusters, algorithms, 'Dist_C', 'N-Clusters', dataset)

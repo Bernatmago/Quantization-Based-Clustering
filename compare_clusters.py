@@ -1,7 +1,7 @@
-from qbca import QBCA
+from source.qbca import QBCA
 from sklearn.cluster import KMeans
 import time
-from utils import *
+from source.utils import load_data, plot_comparison
 
 if __name__ == '__main__':
     n_clusters = 4
